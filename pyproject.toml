@@ -5,8 +5,9 @@ exclude = ["**/node_modules",
 
 ]
 venvPath = "."
-venv = "venv"
+venv = ".venv"
 reportMissingTypeStubs = false
+reportMissingImports = false
 
 [tool.poetry]
 name = "ia-cours-4"

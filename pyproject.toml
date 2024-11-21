@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ia-cours-4"
+version = "0.1.0"
+description = ""
+authors = ["Joé FEUCHT <71235356+joe67100@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+black = "^24.10.0"
+pyright = "^1.1.389"
+pre-commit = "^4.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

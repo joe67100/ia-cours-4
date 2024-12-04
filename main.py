@@ -6,27 +6,32 @@ import yaml
 from picsellia import Client
 from picsellia.types.enums import AnnotationFileType
 from ultralytics import YOLO
+from dotenv import load_dotenv
 
 def train_model():
-    # Paramètres fixes
-    API_TOKEN = "79c34d713ac3d85a03d1805855086c4bc00d1225"
-    ORGANIZATION_NAME = "Picsalex-MLOps"
-    PROJECT_NAME = "Groupe_2"
-    DATASET_NAME = "⭐️ cnam_product_2024"
-    DATASET_VERSION = "initial"
-    EXPERIMENT_NAME = "yolo_training_experiment"
+    load_dotenv()
+    cwd = os.getcwd()
+
+    const = {
+        "API_TOKEN": os.getenv("API_TOKEN"),
+        "ORGANIZATION_NAME": os.getenv("ORGANIZATION_NAME"),
+        "DATASET_NAME": os.getenv("DATASET_NAME"),
+        "DATASET_VERSION": os.getenv("DATASET_VERSION"),
+        "PROJECT_NAME": os.getenv("PROJECT_NAME"),
+        "EXPERIMENT_NAME": os.getenv("EXPERIMENT_NAME"),
+    }
 
     # Initialisation du client Picsellia
-    client = Client(api_token=API_TOKEN, organization_name=ORGANIZATION_NAME)
-    dataset = client.get_dataset(DATASET_NAME).get_version(DATASET_VERSION)
+    client = Client(api_token=const["API_TOKEN"], organization_name=const["ORGANIZATION_NAME"])
+    dataset = client.get_dataset(const["DATASET_NAME"]).get_version(const["DATASET_VERSION"])
 
     # Télécharger le dataset si le dossier n'existe pas
     if not os.path.exists("./datasets"):
         dataset.list_assets().download("./datasets")
 
     # Initialisation du projet et création de l'expérience
-    project = client.get_project(PROJECT_NAME)
-    experiment = project.get_experiment(EXPERIMENT_NAME)
+    project = client.get_project(const["PROJECT_NAME"])
+    experiment = project.get_experiment(const["EXPERIMENT_NAME"])
 
     # Exporter les annotations au format YOLO
     annotation_output_path = "./datasets/annotations"
@@ -108,10 +113,10 @@ def train_model():
 
     # Génération du fichier config.yaml pour YOLO
     config = {
-        "path": r"C:\Users\Isamet\git\ia-cours-4\datasets\structured",
-        "train": r"C:\Users\Isamet\git\ia-cours-4\datasets\structured\images\train",
-        "val": r"C:\Users\Isamet\git\ia-cours-4\datasets\structured\images\val",
-        "test": r"C:\Users\Isamet\git\ia-cours-4\datasets\structured\images\test",
+        "path": os.path.join(cwd, "datasets/structured"),
+        "train": os.path.join(cwd, "datasets/structured/images/train"),
+        "val": os.path.join(cwd, "datasets/structured/images/val"),
+        "test": os.path.join(cwd, "datasets/structured/images/test"),
         "nc": len(class_names),
         "names": class_names,
     }

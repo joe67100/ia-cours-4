@@ -2,8 +2,8 @@
 exclude = ["**/node_modules",
     "**/__pycache__",
     "src/pp_ml.py",
-
 ]
+strict = ["src", "."]
 venvPath = "."
 venv = ".venv"
 reportMissingTypeStubs = false
@@ -25,6 +25,7 @@ picsellia = "^6.19.2"
 ultralytics = "^8.3.40"
 dynaconf = "^3.2.6"
 pyyaml = "^6.0.2"
+python-dotenv = "^1.0.1"
 
 
 [build-system]

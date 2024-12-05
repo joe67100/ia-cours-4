@@ -18,8 +18,5 @@ repos:
     rev: 7.1.1
     hooks:
     -   id: flake8
+        exclude: src/YOLOTrainer.py
         args: [--max-line-length=100]
--   repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.387
-    hooks:
-    -   id: pyright

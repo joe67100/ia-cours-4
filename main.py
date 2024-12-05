@@ -27,11 +27,12 @@ def main():
 
     mediator.prepare_data()
 
-    annotations_dir = os.getenv("ANNOTATION_OUTPUT_PATH")
     output_dir = "./datasets/structured"
     split_ratios = {"train": 0.6, "val": 0.2, "test": 0.2}
 
-    yolo_trainer = YOLOTrainer(mediator, annotations_dir, output_dir, split_ratios)
+    yolo_trainer = YOLOTrainer(
+        mediator, const["ANNOTATION_OUTPUT_PATH"], output_dir, split_ratios
+    )
     yolo_trainer.prepare_directories()
     class_names = yolo_trainer.load_class_names()
     paired_files = yolo_trainer.pair_files("./datasets")

@@ -1,6 +1,8 @@
 input_images
 .idea
-dataset
+datasets
+runs
+yolo11n.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

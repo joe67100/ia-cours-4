@@ -4,6 +4,8 @@ import shutil
 import yaml
 from ultralytics import YOLO
 
+from src.PicselliaLogger import PicselliaLogger
+
 
 class YOLOTrainer:
     def __init__(self, mediator, annotations_dir, output_dir, split_ratios):
@@ -78,10 +80,11 @@ class YOLOTrainer:
             yaml.dump(config, yaml_file, default_flow_style=False)
         return config_path
 
-    def train_yolo_model(self, config_path):
+    def train_yolo_model(self, config_path, experiment):
         model = YOLO("yolo11n.pt")
+        model.to("cuda")
         hyperparameters = {
-            "epochs": 100,
+            "epochs": 1,
             "batch": 32,
             "imgsz": 512,
             "close_mosaic": 0,
@@ -94,6 +97,9 @@ class YOLOTrainer:
             "cache": True,
             "label_smoothing": 0.1,
             "mosaic": True,
-            "patience": 10,
+            "patience": 100,
         }
+        picsellia_logger = PicselliaLogger(experiment)
+        model.add_callback("on_train_epoch_end", picsellia_logger.on_train_epoch_end)
+        ## TODO : Log on_val_epoch_end
         model.train(data=config_path, **hyperparameters)

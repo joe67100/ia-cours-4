@@ -1,7 +1,8 @@
 import os
+import time
 from picsellia import Client
 from dotenv import load_dotenv
-from src.PicselliaDatasetHandler import PicselliaDatasetHandler
+from src.PicselliaHandler import PicselliaHandler
 from src.LocalFileHandler import LocalFileHandler
 from src.TrainingMediator import TrainingMediator
 from src.YOLOTrainer import YOLOTrainer
@@ -9,7 +10,7 @@ from src.YOLOTrainer import YOLOTrainer
 load_dotenv()
 
 
-def main():
+def main() -> None:
 
     const = {
         "API_TOKEN": os.getenv("API_TOKEN"),
@@ -23,13 +24,14 @@ def main():
     client = Client(
         api_token=const["API_TOKEN"], organization_name=const["ORGANIZATION_NAME"]
     )
-    dataset_handler = PicselliaDatasetHandler(client)
+    dataset_handler = PicselliaHandler(client)
     file_handler = LocalFileHandler()
     mediator = TrainingMediator(dataset_handler, file_handler)
 
     mediator.prepare_data()
 
-    experiment = dataset_handler.create_experiment(const["EXPERIMENT_NAME"])
+    experiment_name = f"experiment_{int(time.time())}"
+    experiment = dataset_handler.create_experiment(experiment_name)
     dataset_handler.attach_dataset_to_experiment(experiment, const["DATASET_VERSION"])
 
     output_dir = "./datasets/structured"

@@ -2,17 +2,20 @@ import os
 
 from dotenv import load_dotenv
 
+from src.PicselliaHandler import PicselliaHandler
+from src.Abstract.FileHandler import FileHandler
+
 load_dotenv()
 
 
 class TrainingMediator:
-    def __init__(self, dataset_handler, file_handler):
-        self.dataset_handler = dataset_handler
+    def __init__(self, picsellia_handler: PicselliaHandler, file_handler: FileHandler) -> None:
+        self.picsellia_handler = picsellia_handler
         self.file_handler = file_handler
 
-    def prepare_data(self):
-        self.dataset_handler.download_dataset()
-        self.dataset_handler.export_annotations()
+    def prepare_data(self) -> None:
+        self.picsellia_handler.download_dataset()
+        self.picsellia_handler.export_annotations()
 
         zip_file_path = self.file_handler.find_file(
             os.getenv("ANNOTATION_OUTPUT_PATH"), ".zip"

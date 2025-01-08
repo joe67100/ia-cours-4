@@ -7,8 +7,15 @@ from picsellia.sdk.experiment import Experiment
 from src.PicselliaLogger import PicselliaLogger
 from src.TrainingMediator import TrainingMediator
 
+
 class YOLOTrainer:
-    def __init__(self, mediator: TrainingMediator, annotations_dir: str, output_dir: str, split_ratios: dict[str, float]) -> None:
+    def __init__(
+        self,
+        mediator: TrainingMediator,
+        annotations_dir: str,
+        output_dir: str,
+        split_ratios: dict[str, float],
+    ) -> None:
         self.mediator = mediator
         self.annotations_dir = annotations_dir
         self.output_dir = output_dir
@@ -22,7 +29,9 @@ class YOLOTrainer:
                 os.makedirs(os.path.join(dir, split), exist_ok=True)
 
     def load_class_names(self) -> list:
-        data_yaml_path = self.mediator.file_handler.find_file(self.annotations_dir, ".yaml")
+        data_yaml_path = self.mediator.file_handler.find_file(
+            self.annotations_dir, ".yaml"
+        )
         if data_yaml_path:
             with open(data_yaml_path, "r") as yaml_file:
                 return yaml.safe_load(yaml_file).get("names", [])
@@ -31,9 +40,15 @@ class YOLOTrainer:
             exit(1)
 
     def pair_files(self, base_dir: str) -> list:
-        image_files = [f for f in os.listdir(base_dir) if f.endswith((".jpg", ".jpeg", ".png"))]
-        label_files = [f for f in os.listdir(self.annotations_dir) if f.endswith(".txt")]
-        image_to_label = {img: img.replace(img.split(".")[-1], "txt") for img in image_files}
+        image_files = [
+            f for f in os.listdir(base_dir) if f.endswith((".jpg", ".jpeg", ".png"))
+        ]
+        label_files = [
+            f for f in os.listdir(self.annotations_dir) if f.endswith(".txt")
+        ]
+        image_to_label = {
+            img: img.replace(img.split(".")[-1], "txt") for img in image_files
+        }
         return [(img, lbl) for img, lbl in image_to_label.items() if lbl in label_files]
 
     def split_data(self, paired_files: list) -> dict:

@@ -2,7 +2,6 @@ import numpy as np
 from picsellia.sdk.experiment import Experiment
 
 
-
 class PicselliaLogger:
     def __init__(self, experiment: Experiment) -> None:
         self.experiment = experiment

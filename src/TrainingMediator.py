@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from dotenv import load_dotenv
 
@@ -9,13 +10,20 @@ load_dotenv()
 
 
 class TrainingMediator:
-    def __init__(self, picsellia_handler: PicselliaHandler, file_handler: FileHandler) -> None:
+    def __init__(
+        self, picsellia_handler: PicselliaHandler, file_handler: FileHandler
+    ) -> None:
         self.picsellia_handler = picsellia_handler
         self.file_handler = file_handler
 
     def prepare_data(self) -> None:
         self.picsellia_handler.download_dataset()
         self.picsellia_handler.export_annotations()
+
+        if os.path.exists(os.getenv("RUNS_PATH")) and os.path.isdir(
+            os.getenv("RUNS_PATH")
+        ):
+            shutil.rmtree(os.getenv("RUNS_PATH"))
 
         zip_file_path = self.file_handler.find_file(
             os.getenv("ANNOTATION_OUTPUT_PATH"), ".zip"

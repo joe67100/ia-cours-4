@@ -1,7 +1,7 @@
-from .Abstract.DatasetHandler import DatasetHandler
 from picsellia.types.enums import AnnotationFileType
 from picsellia.sdk.dataset_version import DatasetVersion
 from picsellia.sdk.experiment import Experiment
+from picsellia.sdk.model_version import ModelVersion
 from picsellia import Client
 import os
 from dotenv import load_dotenv
@@ -34,7 +34,21 @@ class PicselliaHandler:
         experiment = project.create_experiment(name=experiment_name)
         return experiment
 
-    def attach_dataset_to_experiment(self, experiment: Experiment, dataset_version_name: str) -> None:
+    def attach_dataset_to_experiment(
+        self, experiment: Experiment, dataset_version_name: str
+    ) -> None:
         experiment.attach_dataset(
             name=dataset_version_name, dataset_version=self.dataset
         )
+
+    def attach_model_to_experiment(self, experiment: Experiment) -> ModelVersion:
+        existing_model = self.client.get_model("Groupe_2")
+        model_version = experiment.export_in_existing_model(existing_model)
+        print(f"Model version {model_version.name} created.")
+        experiment.attach_model_version(model_version)
+        return model_version
+
+    def attach_files_to_model(
+        self, file_name: str, model_version: ModelVersion, pt_path: str
+    ) -> None:
+        model_version.store(file_name, pt_path)

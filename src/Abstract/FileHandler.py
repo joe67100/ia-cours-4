@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class FileHandler(ABC):
     @abstractmethod
-    def find_file(self, directory: str, extension: str) -> str | None:
+    def find_file(self, directory: str, extension: str, name: str = "") -> str | None:
         pass
 
     @abstractmethod

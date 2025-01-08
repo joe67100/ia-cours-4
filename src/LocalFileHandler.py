@@ -8,10 +8,11 @@ load_dotenv()
 
 
 class LocalFileHandler(FileHandler):
-    def find_file(self, directory: str, extension: str) -> str | None:
+    def find_file(self, directory: str, extension: str, name: str = "") -> str | None:
         directory_path = Path(directory)
         for file_path in directory_path.rglob(f"*{extension}"):
-            return str(file_path)
+            if name in file_path.name:
+                return str(file_path)
         return None
 
     def extract_zip(self, zip_file_path: str, extract_to: str) -> None:

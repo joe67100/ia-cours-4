@@ -10,7 +10,7 @@ names:
 - bouteille_plastique
 - canette
 nc: 10
-path: C:\DEV\_ia_cnam\ia-cours-4\datasets/structured
-test: C:\DEV\_ia_cnam\ia-cours-4\datasets/structured/images/test
-train: C:\DEV\_ia_cnam\ia-cours-4\datasets/structured/images/train
-val: C:\DEV\_ia_cnam\ia-cours-4\datasets/structured/images/val
+path: C:\DEV\ia\ia-cours-4\datasets/structured
+test: C:\DEV\ia\ia-cours-4\datasets/structured/images/test
+train: C:\DEV\ia\ia-cours-4\datasets/structured/images/train
+val: C:\DEV\ia\ia-cours-4\datasets/structured/images/val

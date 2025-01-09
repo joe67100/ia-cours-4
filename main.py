@@ -1,26 +1,27 @@
 import os
 import time
+import argparse
 from picsellia import Client
 from dotenv import load_dotenv
 from src.PicselliaHandler import PicselliaHandler
 from src.LocalFileHandler import LocalFileHandler
 from src.TrainingMediator import TrainingMediator
 from src.YOLOTrainer import YOLOTrainer
+from src.Inference import Inference
 
 load_dotenv()
 
 
-def main() -> None:
-
+def train(dataset_version: str, project_name: str) -> None:
     const = {
         "API_TOKEN": os.getenv("API_TOKEN"),
         "ORGANIZATION_NAME": os.getenv("ORGANIZATION_NAME"),
         "ANNOTATION_OUTPUT_PATH": os.getenv("ANNOTATION_OUTPUT_PATH"),
         "EXPERIMENT_NAME": os.getenv("EXPERIMENT_NAME"),
-        "DATASET_VERSION": os.getenv("DATASET_VERSION"),
+        "DATASET_VERSION": dataset_version,
+        "PROJECT_NAME": project_name,
     }
 
-    # Initialisation du client Picsellia
     client = Client(
         api_token=const["API_TOKEN"], organization_name=const["ORGANIZATION_NAME"]
     )
@@ -54,6 +55,38 @@ def main() -> None:
     last_pt_path = file_handler.find_file("./runs", ".pt", "last")
     picsellia_handler.attach_files_to_model("best_pt", model_version, best_pt_path)
     picsellia_handler.attach_files_to_model("last_pt", model_version, last_pt_path)
+
+
+def inference(mode: str, model: str, model_version: str) -> None:
+    inference_instance = Inference(mode, model, model_version)
+    inference_instance.infer()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Training and Inference pipeline")
+    subparsers = parser.add_subparsers(dest="command")
+
+    train_parser = subparsers.add_parser("train", help="Run training pipeline")
+    train_parser.add_argument(
+        "--dataset_version", required=True, help="Dataset version"
+    )
+    train_parser.add_argument("--project_name", required=True, help="Project name")
+
+    infer_parser = subparsers.add_parser("infer", help="Run inference pipeline")
+    infer_parser.add_argument(
+        "mode", choices=["video", "image", "camera"], help="Inference mode"
+    )
+    infer_parser.add_argument("--model", required=True, help="Model name")
+    infer_parser.add_argument("--model_version", required=True, help="Model version")
+
+    args = parser.parse_args()
+
+    if args.command == "train":
+        train(args.dataset_version, args.project_name)
+    elif args.command == "infer":
+        inference(args.mode, args.model, args.model_version)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":

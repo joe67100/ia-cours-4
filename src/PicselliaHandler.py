@@ -52,3 +52,6 @@ class PicselliaHandler:
         self, file_name: str, model_version: ModelVersion, pt_path: str
     ) -> None:
         model_version.store(file_name, pt_path)
+
+    def download_model(self, model_version: ModelVersion) -> None:
+        pass

@@ -2,6 +2,7 @@ import os
 import random
 import shutil
 import yaml
+import torch
 from ultralytics import YOLO
 from picsellia.sdk.experiment import Experiment
 from src.PicselliaLogger import PicselliaLogger
@@ -89,7 +90,12 @@ class YOLOTrainer:
 
     def initialize_model(self) -> YOLO:
         model = YOLO("yolo11n.pt")
-        model.to("cuda")
+        if torch.cuda.is_available():
+            model.to("cuda")
+        elif torch.backends.mps.is_available():
+            model.to("mps")
+        else:
+            print("CUDA / MPS not available. Using CPU.")
         return model
 
     def set_hyperparameters(self) -> dict:
@@ -120,6 +126,7 @@ class YOLOTrainer:
 
     def evaluate_model(self, model: YOLO) -> None:
         results = model.val(data="config.yaml")
+        print(results.mean_results())
         print(results.curves)
         print(results.fitness)
 

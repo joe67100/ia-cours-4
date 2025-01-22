@@ -1,6 +1,7 @@
 import os
 from picsellia import Client
 from ultralytics import YOLO
+import cv2
 
 
 class Inference:
@@ -43,7 +44,7 @@ class Inference:
         elif self.mode == "video":
             pass
         elif self.mode == "camera":
-            pass
+            self._infer_webcam(yolo_model)
         else:
             raise Exception("Unknown source mode")
 
@@ -51,3 +52,26 @@ class Inference:
         [result] = model(file_path)
 
         result.show()
+
+    def _infer_webcam(self, model: YOLO):
+        cap = cv2.VideoCapture(0)
+
+        while cap.isOpened():
+            success, frame = cap.read()
+            if not success:
+                break
+
+            # Run yolo inference on the frame
+            results = model(frame)
+
+            # Visualize the results on the frame
+            annotated_frame = results[0].plot()
+
+            # Display the annotated frame
+            cv2.imshow("YOLO inference (q to quit)", annotated_frame)
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()

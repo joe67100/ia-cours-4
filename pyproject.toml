@@ -26,6 +26,7 @@ ultralytics = "^8.3.40"
 dynaconf = "^3.2.6"
 pyyaml = "^6.0.2"
 python-dotenv = "^1.0.1"
+opencv-python = "^4.11.0.86"
 
 
 [build-system]

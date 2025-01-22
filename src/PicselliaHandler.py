@@ -1,10 +1,11 @@
-from picsellia.types.enums import AnnotationFileType
+import os
+
+from dotenv import load_dotenv
+from picsellia import Client
 from picsellia.sdk.dataset_version import DatasetVersion
 from picsellia.sdk.experiment import Experiment
 from picsellia.sdk.model_version import ModelVersion
-from picsellia import Client
-import os
-from dotenv import load_dotenv
+from picsellia.types.enums import AnnotationFileType
 
 load_dotenv()
 
@@ -52,6 +53,3 @@ class PicselliaHandler:
         self, file_name: str, model_version: ModelVersion, pt_path: str
     ) -> None:
         model_version.store(file_name, pt_path)
-
-    def download_model(self, model_version: ModelVersion) -> None:
-        pass

@@ -1,13 +1,15 @@
+import argparse
 import os
 import time
-import argparse
-from picsellia import Client
+
 from dotenv import load_dotenv
-from src.PicselliaHandler import PicselliaHandler
+from picsellia import Client
+
+from src.Inference import Inference
 from src.LocalFileHandler import LocalFileHandler
+from src.PicselliaHandler import PicselliaHandler
 from src.TrainingMediator import TrainingMediator
 from src.YOLOTrainer import YOLOTrainer
-from src.Inference import Inference
 
 load_dotenv()
 
@@ -57,8 +59,17 @@ def train(dataset_version: str, project_name: str) -> None:
     picsellia_handler.attach_files_to_model("last_pt", model_version, last_pt_path)
 
 
-def inference(mode: str, model: str, model_version: str) -> None:
-    inference_instance = Inference(mode, model, model_version)
+def inference(mode: str, model: str, model_version: str, file_path: str | None) -> None:
+    const = {
+        "API_TOKEN": os.getenv("API_TOKEN"),
+        "ORGANIZATION_NAME": os.getenv("ORGANIZATION_NAME"),
+    }
+
+    client = Client(
+        api_token=const["API_TOKEN"], organization_name=const["ORGANIZATION_NAME"]
+    )
+
+    inference_instance = Inference(client, mode, model, model_version, file_path)
     inference_instance.infer()
 
 
@@ -78,13 +89,20 @@ def main() -> None:
     )
     infer_parser.add_argument("--model", required=True, help="Model name")
     infer_parser.add_argument("--model_version", required=True, help="Model version")
+    infer_parser.add_argument(
+        "file_path",
+        nargs="?",
+        help="File path to a video/image (only required for video and image mode)",
+    )
 
     args = parser.parse_args()
 
     if args.command == "train":
         train(args.dataset_version, args.project_name)
     elif args.command == "infer":
-        inference(args.mode, args.model, args.model_version)
+        if args.mode in ["video", "image"] and not args.file_path:
+            parser.error("File path is required when mode is 'video' or 'image'")
+        inference(args.mode, args.model, args.model_version, args.file_path)
     else:
         parser.print_help()
 

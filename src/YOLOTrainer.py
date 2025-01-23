@@ -101,20 +101,21 @@ class YOLOTrainer:
 
     def set_hyperparameters(self) -> dict:
         return {
-            "epochs": 1,
+            "epochs": 1200,
             "batch": 32,
             "imgsz": 512,
             "close_mosaic": 0,
             "optimizer": "AdamW",
-            "lr0": 0.0025,
-            "momentum": 0.937,
-            "weight_decay": 0.0005,
+            "lr0": 0.00734,
+            "lrf": 0.0129,
+            "momentum": 0.8794,
+            "weight_decay": 0.00041,
             "seed": 42,
             "augment": True,
             "cache": True,
             "label_smoothing": 0.1,
             "mosaic": True,
-            "patience": 100,
+            "patience": 300,
         }
 
     def add_callbacks(self, model: YOLO, experiment: Experiment) -> None:
@@ -125,18 +126,17 @@ class YOLOTrainer:
     def train_model(self, model: YOLO, config_path: str, hyperparameters: dict) -> None:
         model.train(data=config_path, **hyperparameters)
 
-    def evaluate_model(self, model: YOLO) -> None:
+    def evaluate_model(self, model: YOLO, experiment: Experiment) -> None:
         results = model.val(data="config.yaml")
-        print(results.mean_results())
-        print(results.curves)
-        print(results.fitness)
+        experiment.log("best fitness", float(results.fitness), LogType.VALUE)
+        for key, value in results.results_dict.items():
+            if "precision" in key or "recall" in key:
+                experiment.log(f"overall {key} value", float(value), LogType.VALUE)
 
     def train_yolo_model(self, config_path: str, experiment: Experiment) -> None:
         model = self.initialize_model()
         hyperparameters = self.set_hyperparameters()
-        self.add_callbacks(model, experiment)
         experiment.log_parameters(hyperparameters)
+        # self.add_callbacks(model, experiment)
         self.train_model(model, config_path, hyperparameters)
-        # experiment.log("this is a test", 111, LogType.VALUE)
-
-        self.evaluate_model(model)
+        self.evaluate_model(model, experiment)

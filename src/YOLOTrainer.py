@@ -4,6 +4,7 @@ import shutil
 import yaml
 import torch
 from ultralytics import YOLO
+from picsellia.types.enums import LogType
 from picsellia.sdk.experiment import Experiment
 from src.PicselliaLogger import PicselliaLogger
 from src.TrainingMediator import TrainingMediator
@@ -134,5 +135,8 @@ class YOLOTrainer:
         model = self.initialize_model()
         hyperparameters = self.set_hyperparameters()
         self.add_callbacks(model, experiment)
+        experiment.log_parameters(hyperparameters)
         self.train_model(model, config_path, hyperparameters)
+        # experiment.log("this is a test", 111, LogType.VALUE)
+
         self.evaluate_model(model)

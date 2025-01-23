@@ -28,9 +28,6 @@ class Inference:
         self.model_file.download(self.model_folder_path)
 
     def infer(self) -> None:
-        print(self.mode)
-        print(self.model)
-        print(self.model_version)
 
         yolo_model = YOLO(self.model_file_path)
 
@@ -48,12 +45,12 @@ class Inference:
         else:
             raise Exception("Unknown source mode")
 
-    def _infer_image(self, model: YOLO, file_path: str):
+    def _infer_image(self, model: YOLO, file_path: str) -> None:
         [result] = model(file_path)
 
         result.show()
 
-    def _infer_webcam(self, model: YOLO):
+    def _infer_webcam(self, model: YOLO) -> None:
         cap = cv2.VideoCapture(0)
 
         while cap.isOpened():

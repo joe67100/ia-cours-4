@@ -39,13 +39,23 @@ class Inference:
 
             self._infer_image(yolo_model, self.file_path)
         elif self.mode == "video":
-            pass
+            if not self.file_path:
+                raise ValueError("Missing file path")
+            if not os.path.exists(self.file_path):
+                raise FileExistsError("Invalid file path")
+            
+            self._infer_video(yolo_model, self.file_path)
         elif self.mode == "camera":
             self._infer_webcam(yolo_model)
         else:
             raise Exception("Unknown source mode")
 
     def _infer_image(self, model: YOLO, file_path: str) -> None:
+        [result] = model(file_path)
+
+        result.show()
+
+    def _infer_video(self, model: YOLO, file_path: str) -> None:
         [result] = model(file_path)
 
         result.show()

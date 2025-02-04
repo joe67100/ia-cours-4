@@ -4,7 +4,7 @@ import shutil
 import yaml
 import torch
 from ultralytics import YOLO
-from picsellia.types.enums import LogType
+from picsellia.types.enums import LogType, AddEvaluationType, InferenceType
 from picsellia.sdk.experiment import Experiment
 from src.PicselliaLogger import PicselliaLogger
 from src.TrainingMediator import TrainingMediator
@@ -165,7 +165,7 @@ class YOLOTrainer:
 
     def set_hyperparameters(self) -> dict:
         return {
-            "epochs": 50,
+            "epochs": 5,
             "batch": 32,
             "imgsz": 640,
             "close_mosaic": 0,
@@ -211,6 +211,66 @@ class YOLOTrainer:
             if "precision" in key or "recall" in key:
                 experiment.log(f"overall {key} value", float(value), LogType.VALUE)
 
+    def add_evaluation_to_picsellia(self, model: YOLO, experiment: Experiment) -> None:
+        """
+        Uses the trained model to select some images from the validation dataset,
+        makes predictions, and adds evaluations to Picsellia.
+
+        Args:
+            model (YOLO): An instance of the YOLO model.
+            experiment (Experiment): An instance of the Experiment class for logging.
+        """
+        with open("config.yaml", "r") as yaml_file:
+            config = yaml.safe_load(yaml_file)
+            names = config["names"]
+            print(names)
+
+        val_images_dir = os.path.join(self.images_dir, "val")
+        val_images = [
+            img
+            for img in os.listdir(val_images_dir)
+            if img.endswith((".jpg", ".jpeg", ".png"))
+        ]
+        selected_images = random.sample(val_images, min(20, len(val_images)))
+
+        dataset_version = experiment.get_dataset("initial")
+        dataset_labels = {label.name: label for label in dataset_version.list_labels()}
+
+        for img in selected_images:
+            image_path = os.path.join(val_images_dir, img)
+            results = model(image_path)
+            for result in results:
+                rectangles = []
+                classifications = []
+
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    label_id = int(box.cls[0].item())
+                    confidence = box.conf[0].item()
+                    label_name = names[label_id]  # Get label name from names list
+                    if label_name in dataset_labels:
+                        label = dataset_labels[label_name]
+                        rectangles.append((x1, y1, x2, y2, label, confidence))
+                        classifications.append((label, confidence))
+                    else:
+                        print(f"Label name {label_name} not found in dataset labels.")
+
+                img_id = os.path.splitext(img)[0]  # Remove the file extension
+
+                try:
+                    asset = dataset_version.find_asset(id=img_id)
+                    experiment.add_evaluation(
+                        asset,
+                        rectangles=rectangles,
+                        add_type=AddEvaluationType.REPLACE,
+                        classifications=classifications,
+                    )
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+
+        job = experiment.compute_evaluations_metrics(InferenceType.OBJECT_DETECTION)
+        job.wait_for_done()
+
     def train_yolo_model(self, config_path: str, experiment: Experiment) -> None:
         """
         Orchestrates the entire training process of the YOLO model.
@@ -225,3 +285,4 @@ class YOLOTrainer:
         self.add_callbacks(model, experiment)
         self.train_model(model, config_path, hyperparameters)
         self.evaluate_model(model, experiment)
+        self.add_evaluation_to_picsellia(model, experiment)

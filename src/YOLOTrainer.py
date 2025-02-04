@@ -11,6 +11,16 @@ from src.TrainingMediator import TrainingMediator
 
 
 class YOLOTrainer:
+    """
+    A class to handle the training process of a YOLO model.
+
+    Attributes:
+        mediator (TrainingMediator): An instance of TrainingMediator to handle data preparation.
+        annotations_dir (str): Directory containing annotation files.
+        output_dir (str): Directory to store output files.
+        split_ratios (dict[str, float]): Ratios for splitting the dataset into train, validation, and test sets.
+    """
+
     def __init__(
         self,
         mediator: TrainingMediator,
@@ -26,11 +36,25 @@ class YOLOTrainer:
         self.labels_dir = f"{output_dir}/labels"
 
     def prepare_directories(self) -> None:
+        """
+        Prepares the necessary directories for storing images and labels.
+
+        Creates directories for train, validation, and test splits within the images and labels directories.
+        """
         for dir in [self.images_dir, self.labels_dir]:
             for split in self.split_ratios:
                 os.makedirs(os.path.join(dir, split), exist_ok=True)
 
     def load_class_names(self) -> list:
+        """
+        Loads class names from a YAML file.
+
+        Returns:
+            list: A list of class names.
+
+        Raises:
+            SystemExit: If the YAML file is not found.
+        """
         data_yaml_path = self.mediator.file_handler.find_file(
             self.annotations_dir, ".yaml"
         )
@@ -42,6 +66,15 @@ class YOLOTrainer:
             exit(1)
 
     def pair_files(self, base_dir: str) -> list:
+        """
+        Pairs image files with their corresponding label files.
+
+        Args:
+            base_dir (str): The base directory containing image files.
+
+        Returns:
+            list: A list of tuples, each containing an image file and its corresponding label file.
+        """
         image_files = [
             f for f in os.listdir(base_dir) if f.endswith((".jpg", ".jpeg", ".png"))
         ]
@@ -54,6 +87,15 @@ class YOLOTrainer:
         return [(img, lbl) for img, lbl in image_to_label.items() if lbl in label_files]
 
     def split_data(self, paired_files: list) -> dict:
+        """
+        Splits the paired files into train, validation, and test sets.
+
+        Args:
+            paired_files (list): A list of paired image and label files.
+
+        Returns:
+            dict: A dictionary containing the train, validation, and test splits.
+        """
         random.shuffle(paired_files)
         n_total = len(paired_files)
         n_train = int(n_total * self.split_ratios["train"])
@@ -65,6 +107,13 @@ class YOLOTrainer:
         }
 
     def move_files(self, splits: dict, base_dir: str) -> None:
+        """
+        Moves files to their respective directories based on the split.
+
+        Args:
+            splits (dict): A dictionary containing the train, validation, and test splits.
+            base_dir (str): The base directory containing the files to be moved.
+        """
         for split, files in splits.items():
             for img, lbl in files:
                 img_path = os.path.join(base_dir, img)
@@ -76,6 +125,15 @@ class YOLOTrainer:
                     print(f"Fichier manquant pour {img} ou {lbl}.")
 
     def generate_config_yaml(self, class_names: list) -> str:
+        """
+        Generates a configuration YAML file for the YOLO model.
+
+        Args:
+            class_names (list): A list of class names.
+
+        Returns:
+            str: The path to the generated configuration YAML file.
+        """
         config = {
             "path": os.path.join(os.getcwd(), "datasets/structured"),
             "train": os.path.join(os.getcwd(), "datasets/structured/images/train"),
@@ -90,6 +148,12 @@ class YOLOTrainer:
         return config_path
 
     def initialize_model(self) -> YOLO:
+        """
+        Initializes the YOLO model.
+
+        Returns:
+            YOLO: An instance of the YOLO model.
+        """
         model = YOLO("yolo11n.pt")
         if torch.cuda.is_available():
             model.to("cuda")
@@ -101,8 +165,8 @@ class YOLOTrainer:
 
     def set_hyperparameters(self) -> dict:
         return {
-            "epochs": 300,
-            "batch": 128,
+            "epochs": 50,
+            "batch": 32,
             "imgsz": 640,
             "close_mosaic": 0,
             "optimizer": "AdamW",
@@ -119,6 +183,13 @@ class YOLOTrainer:
         }
 
     def add_callbacks(self, model: YOLO, experiment: Experiment) -> None:
+        """
+        Adds callbacks to the YOLO model for logging stuff on Picsellia.
+
+        Args:
+            model (YOLO): An instance of the YOLO model.
+            experiment (Experiment): An instance of the Experiment class for logging.
+        """
         picsellia_logger = PicselliaLogger(experiment)
         model.add_callback("on_train_epoch_end", picsellia_logger.on_train_epoch_end)
         model.add_callback("on_train_end", picsellia_logger.on_train_end)
@@ -127,6 +198,13 @@ class YOLOTrainer:
         model.train(data=config_path, **hyperparameters)
 
     def evaluate_model(self, model: YOLO, experiment: Experiment) -> None:
+        """
+        Evaluates the YOLO model and logs some elements on Picsellia.
+
+        Args:
+            model (YOLO): An instance of the YOLO model.
+            experiment (Experiment): An instance of the Experiment class for logging.
+        """
         results = model.val(data="config.yaml")
         experiment.log("best fitness", float(results.fitness), LogType.VALUE)
         for key, value in results.results_dict.items():
@@ -134,9 +212,16 @@ class YOLOTrainer:
                 experiment.log(f"overall {key} value", float(value), LogType.VALUE)
 
     def train_yolo_model(self, config_path: str, experiment: Experiment) -> None:
+        """
+        Orchestrates the entire training process of the YOLO model.
+
+        Args:
+            config_path (str): The path to the configuration YAML file.
+            experiment (Experiment): An instance of the Experiment class for logging.
+        """
         model = self.initialize_model()
         hyperparameters = self.set_hyperparameters()
         experiment.log_parameters(hyperparameters)
-        # self.add_callbacks(model, experiment)
+        self.add_callbacks(model, experiment)
         self.train_model(model, config_path, hyperparameters)
         self.evaluate_model(model, experiment)

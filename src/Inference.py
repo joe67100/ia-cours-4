@@ -6,6 +6,20 @@ import time
 
 
 class Inference:
+    """
+    A class to handle inference using a YOLO model.
+    Inference can be performed on images, videos, or a webcam feed.
+
+    Attributes:
+        client (Client): An instance of the Picsellia client.
+        mode (str): The mode of inference ('image', 'video', or 'camera').
+        model (str): The name of the model.
+        model_version (str): The version of the model.
+        file_path (str | None): The path to the input file.
+        confidence_threshold (float): The confidence threshold for filtering results.
+        frame_delay (float): The delay between frames for camera inference.
+    """
+
     def __init__(
         self,
         client: Client,
@@ -35,22 +49,23 @@ class Inference:
     def infer(self) -> None:
         yolo_model = YOLO(self.model_file_path)
 
-        if self.mode == "image":
-            if not self.file_path:
-                raise ValueError("Missing file path")
-            if not os.path.exists(self.file_path):
-                raise FileExistsError("Invalid file path")
-            self._infer_image(yolo_model, self.file_path)
-        elif self.mode == "video":
-            if not self.file_path:
-                raise ValueError("Missing file path")
-            if not os.path.exists(self.file_path):
-                raise FileExistsError("Invalid file path")
-            self._infer_video(yolo_model, self.file_path)
-        elif self.mode == "camera":
-            self._infer_webcam(yolo_model)
-        else:
-            raise Exception("Unknown source mode")
+        match self.mode:
+            case "image":
+                if not self.file_path:
+                    raise ValueError("Missing file path")
+                if not os.path.exists(self.file_path):
+                    raise FileExistsError("Invalid file path")
+                self._infer_image(yolo_model, self.file_path)
+            case "video":
+                if not self.file_path:
+                    raise ValueError("Missing file path")
+                if not os.path.exists(self.file_path):
+                    raise FileExistsError("Invalid file path")
+                self._infer_video(yolo_model, self.file_path)
+            case "camera":
+                self._infer_webcam(yolo_model)
+            case _:
+                raise Exception("Unknown source mode")
 
     def _infer_image(self, model: YOLO, file_path: str) -> None:
         results = model(file_path)

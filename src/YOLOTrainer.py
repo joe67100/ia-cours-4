@@ -101,21 +101,21 @@ class YOLOTrainer:
 
     def set_hyperparameters(self) -> dict:
         return {
-            "epochs": 1200,
-            "batch": 32,
-            "imgsz": 512,
+            "epochs": 300,
+            "batch": 128,
+            "imgsz": 640,
             "close_mosaic": 0,
             "optimizer": "AdamW",
-            "lr0": 0.00734,
-            "lrf": 0.0129,
-            "momentum": 0.8794,
-            "weight_decay": 0.00041,
+            "lr0": 0.005,
+            "momentum": 0.9,
+            "weight_decay": 0.0004,
             "seed": 42,
             "augment": True,
             "cache": True,
-            "label_smoothing": 0.1,
+            "label_smoothing": 0.05,
             "mosaic": True,
-            "patience": 300,
+            "mixup": True,
+            "patience": 50,
         }
 
     def add_callbacks(self, model: YOLO, experiment: Experiment) -> None:

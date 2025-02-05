@@ -165,9 +165,9 @@ class YOLOTrainer:
 
     def set_hyperparameters(self) -> dict:
         return {
-            "epochs": 5,
-            "batch": 32,
-            "imgsz": 640,
+            "epochs": 500,
+            "batch": 8,
+            "imgsz": 512,
             "close_mosaic": 0,
             "optimizer": "AdamW",
             "lr0": 0.005,
@@ -179,7 +179,7 @@ class YOLOTrainer:
             "label_smoothing": 0.05,
             "mosaic": True,
             "mixup": True,
-            "patience": 50,
+            "patience": 100,
         }
 
     def add_callbacks(self, model: YOLO, experiment: Experiment) -> None:
@@ -231,42 +231,49 @@ class YOLOTrainer:
             for img in os.listdir(val_images_dir)
             if img.endswith((".jpg", ".jpeg", ".png"))
         ]
-        selected_images = random.sample(val_images, min(20, len(val_images)))
+        selected_images = random.sample(val_images, min(30, len(val_images)))
 
         dataset_version = experiment.get_dataset("initial")
         dataset_labels = {label.name: label for label in dataset_version.list_labels()}
 
         for img in selected_images:
             image_path = os.path.join(val_images_dir, img)
-            results = model(image_path)
-            for result in results:
-                rectangles = []
-                classifications = []
+            img_id = os.path.splitext(img)[0]  # Remove the file extension
 
-                for box in result.boxes:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    label_id = int(box.cls[0].item())
-                    confidence = box.conf[0].item()
-                    label_name = names[label_id]  # Get label name from names list
-                    if label_name in dataset_labels:
-                        label = dataset_labels[label_name]
-                        rectangles.append((x1, y1, x2, y2, label, confidence))
-                        classifications.append((label, confidence))
-                    else:
-                        print(f"Label name {label_name} not found in dataset labels.")
+            try:
+                asset = dataset_version.find_asset(id=img_id)
+                results = model(image_path)
+                for result in results:
+                    rectangles = []
+                    classifications = []
 
-                img_id = os.path.splitext(img)[0]  # Remove the file extension
+                    for box in result.boxes:
+                        x_center, y_center, w, h = map(float, box.xywh[0])
 
-                try:
-                    asset = dataset_version.find_asset(id=img_id)
+                        # Used to convert center-center values to top-left values (used in Picsellia)
+                        x = int(x_center - w / 2)
+                        y = int(y_center - h / 2)
+
+                        label_id = int(box.cls[0].item())
+                        confidence = box.conf[0].item()
+                        label_name = names[label_id]  # Get label name from names list
+                        if label_name in dataset_labels:
+                            label = dataset_labels[label_name]
+                            rectangles.append((x, y, int(w), int(h), label, confidence))
+                            classifications.append((label, confidence))
+                        else:
+                            print(
+                                f"Label name {label_name} not found in dataset labels."
+                            )
+
                     experiment.add_evaluation(
                         asset,
                         rectangles=rectangles,
                         add_type=AddEvaluationType.REPLACE,
                         classifications=classifications,
                     )
-                except Exception as e:
-                    print(f"An error occurred: {e}")
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
         job = experiment.compute_evaluations_metrics(InferenceType.OBJECT_DETECTION)
         job.wait_for_done()

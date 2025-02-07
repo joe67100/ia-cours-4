@@ -165,7 +165,7 @@ class YOLOTrainer:
 
     def set_hyperparameters(self) -> dict:
         return {
-            "epochs": 500,
+            "epochs": 3,
             "batch": 8,
             "imgsz": 512,
             "close_mosaic": 0,
@@ -194,9 +194,6 @@ class YOLOTrainer:
         model.add_callback("on_train_epoch_end", picsellia_logger.on_train_epoch_end)
         model.add_callback("on_train_end", picsellia_logger.on_train_end)
 
-    def train_model(self, model: YOLO, config_path: str, hyperparameters: dict) -> None:
-        model.train(data=config_path, **hyperparameters)
-
     def evaluate_model(self, model: YOLO, experiment: Experiment) -> None:
         """
         Evaluates the YOLO model and logs some elements on Picsellia.
@@ -223,7 +220,6 @@ class YOLOTrainer:
         with open("config.yaml", "r") as yaml_file:
             config = yaml.safe_load(yaml_file)
             names = config["names"]
-            print(names)
 
         val_images_dir = os.path.join(self.images_dir, "val")
         val_images = [
@@ -290,6 +286,6 @@ class YOLOTrainer:
         hyperparameters = self.set_hyperparameters()
         experiment.log_parameters(hyperparameters)
         self.add_callbacks(model, experiment)
-        self.train_model(model, config_path, hyperparameters)
+        model.train(data=config_path, **hyperparameters)
         self.evaluate_model(model, experiment)
         self.add_evaluation_to_picsellia(model, experiment)

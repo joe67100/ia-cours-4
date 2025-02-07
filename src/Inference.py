@@ -40,7 +40,7 @@ class Inference:
 
         model = client.get_model(model)
         model_version = model.get_version(model_version)
-        self.model_file = model_version.get_file("last_pt")
+        self.model_file = model_version.get_file("best_pt")
 
         self.model_folder_path = f"./models/{model_version.name}"
         self.model_file_path = f"{self.model_folder_path}/{self.model_file.filename}"
@@ -72,8 +72,19 @@ class Inference:
         self._filter_and_display(results)
 
     def _infer_video(self, model: YOLO, file_path: str) -> None:
-        results = model(file_path)
-        self._filter_and_display(results)
+        results = model(file_path, stream=True)
+
+        for result in results:
+            # Visualize the results on the frame
+            annotated_frame = result.plot()
+
+            # Display the annotated frame
+            cv2.imshow("YOLO inference (q to quit)", annotated_frame)
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+        cv2.destroyAllWindows()
 
     def _infer_webcam(self, model: YOLO) -> None:
         cap = cv2.VideoCapture(0)

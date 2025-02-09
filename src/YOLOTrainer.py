@@ -124,7 +124,8 @@ class YOLOTrainer:
                 else:
                     print(f"Fichier manquant pour {img} ou {lbl}.")
 
-    def generate_config_yaml(self, class_names: list) -> str:
+    @staticmethod
+    def generate_config_yaml(class_names: list) -> str:
         """
         Generates a configuration YAML file for the YOLO model.
 
@@ -147,7 +148,8 @@ class YOLOTrainer:
             yaml.dump(config, yaml_file, default_flow_style=False)
         return config_path
 
-    def initialize_model(self) -> YOLO:
+    @staticmethod
+    def initialize_model() -> YOLO:
         """
         Initializes the YOLO model.
 
@@ -163,9 +165,10 @@ class YOLOTrainer:
             print("CUDA / MPS not available. Using CPU.")
         return model
 
-    def set_hyperparameters(self) -> dict:
+    @staticmethod
+    def set_hyperparameters() -> dict:
         return {
-            "epochs": 3,
+            "epochs": 5,
             "batch": 8,
             "imgsz": 512,
             "close_mosaic": 0,
@@ -182,7 +185,8 @@ class YOLOTrainer:
             "patience": 100,
         }
 
-    def add_callbacks(self, model: YOLO, experiment: Experiment) -> None:
+    @staticmethod
+    def add_callbacks(model: YOLO, experiment: Experiment) -> None:
         """
         Adds callbacks to the YOLO model for logging stuff on Picsellia.
 
@@ -194,7 +198,8 @@ class YOLOTrainer:
         model.add_callback("on_train_epoch_end", picsellia_logger.on_train_epoch_end)
         model.add_callback("on_train_end", picsellia_logger.on_train_end)
 
-    def evaluate_model(self, model: YOLO, experiment: Experiment) -> None:
+    @staticmethod
+    def evaluate_model(model: YOLO, experiment: Experiment) -> None:
         """
         Evaluates the YOLO model and logs some elements on Picsellia.
 
@@ -217,62 +222,92 @@ class YOLOTrainer:
             model (YOLO): An instance of the YOLO model.
             experiment (Experiment): An instance of the Experiment class for logging.
         """
-        with open("config.yaml", "r") as yaml_file:
-            config = yaml.safe_load(yaml_file)
-            names = config["names"]
+        config = self._load_config()
+        names = config["names"]
 
         val_images_dir = os.path.join(self.images_dir, "val")
-        val_images = [
-            img
-            for img in os.listdir(val_images_dir)
-            if img.endswith((".jpg", ".jpeg", ".png"))
-        ]
-        selected_images = random.sample(val_images, min(30, len(val_images)))
+        selected_images = self._select_images(val_images_dir)
 
         dataset_version = experiment.get_dataset("initial")
         dataset_labels = {label.name: label for label in dataset_version.list_labels()}
 
         for img in selected_images:
-            image_path = os.path.join(val_images_dir, img)
-            img_id = os.path.splitext(img)[0]  # Remove the file extension
-
-            try:
-                asset = dataset_version.find_asset(id=img_id)
-                results = model(image_path)
-                for result in results:
-                    rectangles = []
-                    classifications = []
-
-                    for box in result.boxes:
-                        x_center, y_center, w, h = map(float, box.xywh[0])
-
-                        # Used to convert center-center values to top-left values (used in Picsellia)
-                        x = int(x_center - w / 2)
-                        y = int(y_center - h / 2)
-
-                        label_id = int(box.cls[0].item())
-                        confidence = box.conf[0].item()
-                        label_name = names[label_id]  # Get label name from names list
-                        if label_name in dataset_labels:
-                            label = dataset_labels[label_name]
-                            rectangles.append((x, y, int(w), int(h), label, confidence))
-                            classifications.append((label, confidence))
-                        else:
-                            print(
-                                f"Label name {label_name} not found in dataset labels."
-                            )
-
-                    experiment.add_evaluation(
-                        asset,
-                        rectangles=rectangles,
-                        add_type=AddEvaluationType.REPLACE,
-                        classifications=classifications,
-                    )
-            except Exception as e:
-                print(f"An error occurred: {e}")
+            self._process_image(
+                img,
+                val_images_dir,
+                model,
+                experiment,
+                dataset_version,
+                dataset_labels,
+                names,
+            )
 
         job = experiment.compute_evaluations_metrics(InferenceType.OBJECT_DETECTION)
         job.wait_for_done()
+
+    @staticmethod
+    def _load_config() -> dict:
+        with open("config.yaml", "r") as yaml_file:
+            return yaml.safe_load(yaml_file)
+
+    @staticmethod
+    def _select_images(test_images_dir: str) -> list:
+        return [
+            img
+            for img in os.listdir(test_images_dir)
+            if img.endswith((".jpg", ".jpeg", ".png"))
+        ]
+
+    def _process_image(
+        self,
+        img: str,
+        val_images_dir: str,
+        model: YOLO,
+        experiment: Experiment,
+        dataset_version,
+        dataset_labels: dict,
+        names: list,
+    ) -> None:
+        image_path = os.path.join(val_images_dir, img)
+        img_id = os.path.splitext(img)[0]  # Remove the file extension
+
+        try:
+            asset = dataset_version.find_asset(id=img_id)
+            results = model(image_path)
+            rectangles, classifications = self._process_results(
+                results, dataset_labels, names
+            )
+            experiment.add_evaluation(
+                asset,
+                rectangles=rectangles,
+                add_type=AddEvaluationType.REPLACE,
+                classifications=classifications,
+            )
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    @staticmethod
+    def _process_results(results, dataset_labels: dict, names: list) -> tuple:
+        rectangles = []
+        classifications = []
+
+        for result in results:
+            for box in result.boxes:
+                x_center, y_center, w, h = map(float, box.xywh[0])
+                x = int(x_center - w / 2)
+                y = int(y_center - h / 2)
+
+                label_id = int(box.cls[0].item())
+                confidence = box.conf[0].item()
+                label_name = names[label_id]  # Get label name from names list
+                if label_name in dataset_labels:
+                    label = dataset_labels[label_name]
+                    rectangles.append((x, y, int(w), int(h), label, confidence))
+                    classifications.append((label, confidence))
+                else:
+                    print(f"Label name {label_name} not found in dataset labels.")
+
+        return rectangles, classifications
 
     def train_yolo_model(self, config_path: str, experiment: Experiment) -> None:
         """

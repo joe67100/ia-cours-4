@@ -71,7 +71,8 @@ class Inference:
         results = model(file_path)
         self._filter_and_display(results)
 
-    def _infer_video(self, model: YOLO, file_path: str) -> None:
+    @staticmethod
+    def _infer_video(model: YOLO, file_path: str) -> None:
         results = model(file_path, stream=True)
 
         for result in results:

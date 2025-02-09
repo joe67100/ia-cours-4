@@ -49,7 +49,8 @@ class PicselliaHandler:
         experiment.attach_model_version(model_version)
         return model_version
 
+    @staticmethod
     def attach_files_to_model(
-        self, file_name: str, model_version: ModelVersion, pt_path: str
+        file_name: str, model_version: ModelVersion, pt_path: str
     ) -> None:
         model_version.store(file_name, pt_path)

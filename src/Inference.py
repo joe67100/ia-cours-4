@@ -36,8 +36,6 @@ class Inference:
     ):
         self.client = client
         self.mode = mode
-        self.model = model
-        self.model_version = model_version
         self.file_path = file_path
         self.confidence_threshold = confidence_threshold
         self.frame_delay = frame_delay

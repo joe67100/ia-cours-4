@@ -41,7 +41,7 @@ Ultralytics et ses modèles YOLO sont choisis pour la détection d'objets.
 - **Fine-tuning :** comme mentionné précédemment, le fine-tuning pourrait améliorer les résultats. Cependant, il serait nécessaire de le tester sur des machines plus performantes.
 
 ## Meilleur modèle
-Disponible [ici](https://app.picsellia.com/0192f6db-86b6-784c-80e6-163debb242d5/project/01936420-552b-796d-a41c-3b3bf1f7348f/experiment/0194df46-9bc6-75ce-87e5-6f4f6f63beb9/)
+Disponible [ici](https://app.picsellia.com/0192f6db-86b6-784c-80e6-163debb242d5/project/01936420-552b-796d-a41c-3b3bf1f7348f/experiment/0194df75-283f-7491-898d-4d16e396595f/)
 
 Version du modèle YOLO utilisé : yolov11l
 
@@ -110,7 +110,7 @@ python main.py infer --model Groupe_2 --model_version Groupe_2-55 camera
 
 ## Liens utiles
 - [Picsellia : Projects / Groupe_2](https://app.picsellia.com/0192f6db-86b6-784c-80e6-163debb242d5/project/01936420-552b-796d-a41c-3b3bf1f7348f)
-- [**Meilleur model_version**](https://app.picsellia.com/0192f6db-86b6-784c-80e6-163debb242d5/project/01936420-552b-796d-a41c-3b3bf1f7348f/experiment/0194df46-9bc6-75ce-87e5-6f4f6f63beb9/)
+- [**Meilleur model_version**](https://app.picsellia.com/0192f6db-86b6-784c-80e6-163debb242d5/project/01936420-552b-796d-a41c-3b3bf1f7348f/experiment/0194df75-283f-7491-898d-4d16e396595f/)
 
 
 ## Auteurs
